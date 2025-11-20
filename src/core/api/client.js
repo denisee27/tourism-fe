@@ -23,7 +23,7 @@ import { refreshToken } from "../../features/auth/api/index.js";
  */
 const axiosInstance = axios.create({
   baseURL: env.VITE_API_BASE_URL,
-  timeout: 30000, // 30 seconds
+  timeout: 500000, // 30 seconds
   headers: {
     "Content-Type": "application/json",
   },

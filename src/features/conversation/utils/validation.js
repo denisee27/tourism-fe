@@ -37,8 +37,7 @@ export const conversationSchema = z.object({
   numberOfPeople: z
     .string()
     .trim()
-    .min(1, { message: "Number of people is required" })
-    .transform((val) => parseInt(val, 10)),
+    .min(1, { message: "Number of people  is required and must be at least 1 characters" }),
 
   transportation: z
     .string()
@@ -49,8 +48,7 @@ export const conversationSchema = z.object({
   estimatedBudget: z
     .string()
     .trim()
-    .min(1, { message: "Estimated budget is required" })
-    .transform((val) => parseInt(val.replace(/[\,\s]/g, ""), 10))
+    .min(2, { message: "Estimated budged is required and must be at least 2 characters" }),
 });
 
 export default conversationSchema;
