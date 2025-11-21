@@ -1,0 +1,91 @@
+@import "tailwindcss";
+
+/* Tailwind v4 theme tokens for color consistency */
+@theme {
+  --color-background: hsl(0 0% 100%);
+  --color-foreground: hsl(214 20% 20%);
+  --color-card: hsl(0 0% 100%);
+  --color-card-foreground: hsl(214 20% 20%);
+  --color-popover: hsl(0 0% 100%);
+  --color-popover-foreground: hsl(214 20% 20%);
+  --color-primary: hsl(214 73% 34%);
+  --color-primary-foreground: hsl(0 0% 100%);
+  --color-primary-light: hsl(214 73% 45%);
+  --color-primary-lighter: hsl(214 60% 85%);
+  --color-secondary: hsl(214 15% 95%);
+  --color-secondary-foreground: hsl(214 73% 34%);
+  --color-muted: hsl(214 15% 96%);
+  --color-muted-foreground: hsl(214 15% 45%);
+  --color-accent: hsl(214 60% 50%);
+  --color-accent-foreground: hsl(0 0% 100%);
+  --color-destructive: hsl(0 84.2% 60.2%);
+  --color-destructive-foreground: hsl(0 0% 100%);
+  --color-border: hsl(214 20% 90%);
+  --color-input: hsl(214 20% 90%);
+  --color-ring: hsl(214 73% 34%);
+  --radius: 0.5rem;
+  --gradient-hero: linear-gradient(135deg, hsl(214 73% 34%), hsl(214 73% 45%));
+  --gradient-subtle: linear-gradient(180deg, hsl(0 0% 100%), hsl(214 60% 98%));
+  --shadow-sm: 0 1px 2px 0 hsl(214 73% 34% / 0.05);
+  --shadow-md: 0 4px 6px -1px hsl(214 73% 34% / 0.1);
+  --shadow-lg: 0 10px 15px -3px hsl(214 73% 34% / 0.15);
+  --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  --color-sidebar-background: hsl(0 0% 98%);
+  --color-sidebar-foreground: hsl(214 20% 30%);
+  --color-sidebar-primary: hsl(214 73% 34%);
+  --color-sidebar-primary-foreground: hsl(0 0% 100%);
+  --color-sidebar-accent: hsl(214 15% 95%);
+  --color-sidebar-border: hsl(214 20% 90%);
+  --color-sidebar-accent-foreground: hsl(214 73% 34%);
+  --color-sidebar-ring: hsl(214 73% 34%);
+}
+
+.dark {
+  --color-background: hsl(214 30% 10%);
+  --color-foreground: hsl(0 0% 95%);
+  --color-card: hsl(214 25% 12%);
+  --color-card-foreground: hsl(0 0% 95%);
+  --color-popover: hsl(214 25% 12%);
+  --color-popover-foreground: hsl(0 0% 95%);
+  --color-primary: hsl(214 73% 55%);
+  --color-primary-foreground: hsl(0 0% 100%);
+  --color-primary-light: hsl(214 73% 65%);
+  --color-primary-lighter: hsl(214 60% 25%);
+  --color-secondary: hsl(214 20% 18%);
+  --color-secondary-foreground: hsl(0 0% 95%);
+  --color-muted: hsl(214 20% 18%);
+  --color-muted-foreground: hsl(214 10% 60%);
+  --color-accent: hsl(214 73% 55%);
+  --color-accent-foreground: hsl(0 0% 100%);
+  --color-destructive: hsl(0 62.8% 50%);
+  --color-destructive-foreground: hsl(0 0% 100%);
+  --color-border: hsl(214 20% 20%);
+  --color-input: hsl(214 20% 20%);
+  --color-ring: hsl(214 73% 55%);
+  --color-sidebar-background: hsl(214 25% 12%);
+  --color-sidebar-foreground: hsl(0 0% 90%);
+  --color-sidebar-primary: hsl(214 73% 55%);
+  --color-sidebar-primary-foreground: hsl(0 0% 100%);
+  --color-sidebar-accent: hsl(214 20% 18%);
+  --color-sidebar-accent-foreground: hsl(0 0% 90%);
+  --color-sidebar-border: hsl(214 20% 20%);
+  --color-sidebar-ring: hsl(214 73% 55%);
+
+}
+
+/* Toast animations */
+@keyframes slideInRight {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+.animate-slideInRight {
+  animation: slideInRight 0.3s ease-out;
+}
