@@ -14,6 +14,6 @@ export const createConvo = async (data, sessionId) => {
 export const getKeyPoint = async () => {
     const sessionId = localStorage.getItem("sessionId");
     const res = await api.get("/conversations/8442117623151329280/detail");
-    // const res = await api.get("/conversations/" + sessionId + "/detail");
+    console.log(res)
     return res;
 }

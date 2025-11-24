@@ -9,7 +9,6 @@ export const AiAssistant = () => {
     const [inputMessage, setInputMessage] = useState("");
     const { data: eachData = null, refetch, isRefetching, isPending, isError } = useEachConversation(sessionId);
     const { mutate: pushMessage, data: resultConvo = [], isPending: isPendingPush, isError: isErrorPush } = usePushMessage();
-    // Pesan dari server (eachData) saja, untuk mendeteksi perubahan
     const eachMessages = useMemo(() => (
         Array.isArray(eachData) ? eachData : (eachData?.messages || [])
     ), [eachData]);

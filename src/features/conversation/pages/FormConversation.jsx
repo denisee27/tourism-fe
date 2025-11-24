@@ -5,6 +5,9 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { conversationSchema } from "../utils/validation";
 import { useState } from "react";
+import Markdown from 'react-markdown'
+
+
 
 
 export const FormConversation = () => {
@@ -12,16 +15,10 @@ export const FormConversation = () => {
     const conversationAi = useStoreConvo((state) => state.conversations);
     const { mutateAsync: startSession } = useFormSession();
     const { mutateAsync: submitConvo, isPending } = useConvo();
-    const { data: keyPointList, isPending: isPendingConvo } = useKeyPoint();
+    const { data: keyPointList, isPending: isPendingKeyPoint } = useKeyPoint();
     const [keyPoint, setKeyPoint] = useState(keyPointList || []);
-    // Tabs data (array of objects) dan state tab aktif
-    const tabsData = [
-        { title: "Flight Flow", text: "flight......" },
-        { title: "Visa Flow", text: "visa......" },
-        { title: "Hotels", text: "hotels......" },
-        { title: "Itinerary", text: "itinerary......" },
-        { title: "Key Info", text: "key information......" },
-    ];
+    console.log('keyPointList', keyPointList)
+
     const [activeTabIndex, setActiveTabIndex] = useState(0);
     const handleTabClick = (idx) => setActiveTabIndex(idx);
 
@@ -44,10 +41,8 @@ export const FormConversation = () => {
         },
     });
 
-
-
     const onSubmit = async (data) => {
-        setConversationAi();
+        setConversationAi(true);
         const session = await startSession();
         localStorage.setItem("sessionId", session?.sessionId);
         handlePushConvo(data);
@@ -61,11 +56,11 @@ export const FormConversation = () => {
 
     return (
         <>
-            {(!isPending && keyPoint.length <= 0 && conversationAi) && (
+            {(!isPending && !isPendingKeyPoint && conversationAi) && (
                 <>
                     <div className="mt-1 w-full max-w-full">
                         <div className="flex flex-wrap gap-2 border-b border-sidebar-border pb-2">
-                            {tabsData.map((tab, idx) => (
+                            {keyPointList.map((tab, idx) => (
                                 <button
                                     key={tab.title}
                                     type="button"
@@ -82,7 +77,9 @@ export const FormConversation = () => {
 
                         <div className="mt-4 p-4 border rounded-md bg-card">
                             <p className="text-sm text-foreground whitespace-pre-line">
-                                {tabsData[activeTabIndex]?.text}
+                                <Markdown>
+                                    {keyPointList[activeTabIndex]?.detail}
+                                </Markdown>
                             </p>
                         </div>
                     </div>

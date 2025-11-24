@@ -2,8 +2,11 @@ import { create } from "zustand";
 
 export const useStoreConvo = create((set, get) => ({
     conversations: true,
-    setConversationAi: () => {
-        const newState = !get().conversations;
-        set({ conversations: newState });
+    summary: false,
+    setConversationAi: (value) => {
+        set({ conversations: value });
+    },
+    setSummary: (value) => {
+        set({ summary: value });
     },
 }));

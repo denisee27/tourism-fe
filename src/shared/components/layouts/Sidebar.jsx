@@ -87,55 +87,58 @@ export const Sidebar = () => {
         ${isCollapsed ? "w-16" : "w-64"}
       `}
     >
-      <div className="mb-2 p-4 flex items-center justify-between">
-        {!isCollapsed && <p className="text-2xl font-bold text-black">TravelMind</p>}
-        <button
-          onClick={toggleSidebar}
-          className="rounded text-black p-1 hover:text-gray-700 hover:cursor-pointer transition-colors"
-          aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
-        >
-          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            {isCollapsed ? (
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-            ) : (
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M15 19l-7-7 7-7"
-              />
-            )}
-          </svg>
-        </button>
+      <div className="flex flex-col">
+        <div className="mb-2 p-4 flex items-center justify-between">
+          {!isCollapsed && <p className="text-2xl font-bold text-black">TravelMind</p>}
+          <button
+            onClick={toggleSidebar}
+            className="rounded text-black p-1 hover:text-gray-700 hover:cursor-pointer transition-colors"
+            aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+          >
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              {isCollapsed ? (
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              ) : (
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M15 19l-7-7 7-7"
+                />
+              )}
+            </svg>
+          </button>
+        </div>
+        <nav className="space-y-2 px-4">
+          <button
+            type="button"
+            className="block px-3 py-2 rounded transition-colors hover:bg-primary/90 hover:cursor-pointer bg-primary text-white w-full text-left"
+          >
+            <div className="flex items-center">
+              <Plus className="me-3" />
+              New Conversation
+            </div>
+          </button>
+
+          <button
+            type="button"
+            onClick={handleGetMe}
+            className="block px-3 py-2 border border-sidebar-border rounded transition-colors hover:bg-primary-light hover:text-white hover:cursor-pointer bg-white text-black w-full text-left"
+          >
+            <div className="flex items-center">
+              <LayoutDashboard className="me-3" />
+              View Conversations
+            </div>
+          </button>
+        </nav>
+        <hr className="text-sidebar-border mt-5" />
       </div>
 
       {/* Section Navigation Item */}
       {!isCollapsed && (
         <div className="flex flex-col h-full overflow-y-auto">
           <div className="flex flex-col justify-between">
-            <nav className="space-y-2 px-4">
-              <button
-                type="button"
-                className="block px-3 py-2 rounded transition-colors hover:bg-primary/90 hover:cursor-pointer bg-primary text-white w-full text-left"
-              >
-                <div className="flex items-center">
-                  <Plus className="me-3" />
-                  New Conversation
-                </div>
-              </button>
 
-              <button
-                type="button"
-                onClick={handleGetMe}
-                className="block px-3 py-2 border border-sidebar-border rounded transition-colors hover:bg-primary-light hover:text-white hover:cursor-pointer bg-white text-black w-full text-left"
-              >
-                <div className="flex items-center">
-                  <LayoutDashboard className="me-3" />
-                  View Conversations
-                </div>
-              </button>
-            </nav>
-            <hr className="text-sidebar-border mt-5" />
             <div className="px-2 py-2 flex flex-col gap-1">
               {conversations.map((item) => (
                 <div
