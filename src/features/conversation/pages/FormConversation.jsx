@@ -7,18 +7,14 @@ import { conversationSchema } from "../utils/validation";
 import { useState } from "react";
 import Markdown from 'react-markdown'
 
-
-
-
 export const FormConversation = () => {
     const setConversationAi = useStoreConvo((state) => state.setConversationAi);
     const conversationAi = useStoreConvo((state) => state.conversations);
     const { mutateAsync: startSession } = useFormSession();
     const { mutateAsync: submitConvo, isPending } = useConvo();
-    const { data: keyPointList, isPending: isPendingKeyPoint } = useKeyPoint();
+    const [hasSessionId, setHasSessionId] = useState(Boolean(localStorage.getItem("sessionId")));
+    const { data: keyPointList, isPending: isPendingKeyPoint } = useKeyPoint({ enabled: hasSessionId });
     const [keyPoint, setKeyPoint] = useState(keyPointList || []);
-    console.log('keyPointList', keyPointList)
-
     const [activeTabIndex, setActiveTabIndex] = useState(0);
     const handleTabClick = (idx) => setActiveTabIndex(idx);
 
@@ -45,48 +41,18 @@ export const FormConversation = () => {
         setConversationAi(true);
         const session = await startSession();
         localStorage.setItem("sessionId", session?.sessionId);
+        setHasSessionId(Boolean(session?.sessionId));
         handlePushConvo(data);
     };
 
     const handlePushConvo = async (data) => {
         const sessionId = localStorage.getItem("sessionId");
         const res = await submitConvo({ data, sessionId });
-        console.log(res);
     }
 
     return (
         <>
-            {(!isPending && !isPendingKeyPoint && conversationAi) && (
-                <>
-                    <div className="mt-1 w-full max-w-full">
-                        <div className="flex flex-wrap gap-2 border-b border-sidebar-border pb-2">
-                            {keyPointList.map((tab, idx) => (
-                                <button
-                                    key={tab.title}
-                                    type="button"
-                                    onClick={() => handleTabClick(idx)}
-                                    className={`flex items-center gap-2 px-4 py-2 rounded-t-md transition-colors text-sm
-                                        ${activeTabIndex === idx
-                                            ? "border-b-2 border-primary text-primary"
-                                            : "text-muted-foreground hover:text-foreground"}`}
-                                >
-                                    {tab.title}
-                                </button>
-                            ))}
-                        </div>
-
-                        <div className="mt-4 p-4 border rounded-md bg-card">
-                            <p className="text-sm text-foreground whitespace-pre-line">
-                                <Markdown>
-                                    {keyPointList[activeTabIndex]?.detail}
-                                </Markdown>
-                            </p>
-                        </div>
-                    </div>
-                </>
-            )}
-
-            {(!isPending && keyPoint.length <= 0 && !conversationAi) && (
+            {(!isPending && keyPoint?.length <= 0 && !conversationAi) && (
                 <div className="relative w-full mx-auto p-6 bg-card rounded-lg shadow" aria-busy={isPending}>
                     <div className="text-center">
                         <h2 className="text-2xl font-bold mb-2 text-primary">
@@ -99,9 +65,6 @@ export const FormConversation = () => {
                             Please fill out the form below with your desired trip details. <br />The more information you provide, the better travel plan we can create for you!
                         </p>
                     </div>
-
-
-
                     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
                         <div className="flex gap-4">
                             <div className="flex-1">
@@ -217,12 +180,73 @@ export const FormConversation = () => {
                     </form>
                 </div>
             )}
+
+            {(!isPendingKeyPoint && hasSessionId && keyPointList?.length <= 0) && (
+                <div className="flex flex-col items-center justify-center min-h-screen text-center mx-auto">
+                    {/* Animasi Icon/Spinner */}
+                    <div className="relative flex h-16 w-16 mb-4">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-20"></span>
+                        <span className="relative inline-flex rounded-full h-16 w-16 bg-gradient-to-tr from-blue-500 to-primary items-center justify-center shadow-lg">
+                            <svg className="w-8 h-8 text-white animate-pulse" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.384-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
+                            </svg>
+                        </span>
+                    </div>
+
+                    <h3 className="text-xl font-bold text-gray-800 tracking-wide">
+                        Orchestrating Your Journey Plans
+                    </h3>
+
+                    <p className="text-gray-500 text-sm mt-2 animate-pulse font-medium">
+                        Keep the conversation flowing with your preferences!
+                    </p>
+
+                </div>
+            )}
+            {/* penanda saat belum ada sessionId meski conversationAi aktif */}
+            {(conversationAi && !hasSessionId) && (
+                <div className="flex items-center gap-3 px-4 py-3 rounded-md bg-card shadow w-full mt-2" role="status" aria-live="polite">
+                    <Loader2 className="h-5 w-5 animate-spin text-primary" aria-hidden="true" />
+                    <span className="text-sm text-muted-foreground">Menyiapkan sesi AI...</span>
+                </div>
+            )}
+
+            {(!isPending && !isPendingKeyPoint && conversationAi && hasSessionId) && (
+                <>
+                    <div className="mt-1 h-full min-h-0 flex flex-col overflow-x-auto w-full  min-w-0">
+                        <div className="flex bg-sidebar-background flex-wrap gap-2 border-sidebar-border shrink-0 max-w-full border-b">
+                            {keyPointList?.map((tab, idx) => (
+                                <>
+                                    <button
+                                        key={tab.title}
+                                        type="button"
+                                        onClick={() => handleTabClick(idx)}
+                                        className={`flex items-center gap-2 px-4 py-2  transition-colors text-sm
+                                        ${activeTabIndex === idx
+                                                ? "border-b-2 border-primary text-primary bg-white"
+                                                : "text-muted-foreground hover:text-foreground"}`}
+                                    >
+                                        {tab.title}
+                                    </button>
+
+                                </>
+                            ))}
+                        </div>
+
+                        <div className="mt-4 p-4 rounded-md bg-card overflow-y-auto min-h-0 flex-1 scroll-smooth">
+                            <p className="text-sm text-foreground whitespace-pre-line">
+                                <Markdown>
+                                    {keyPointList[activeTabIndex]?.detail}
+                                </Markdown>
+                            </p>
+                        </div>
+                    </div>
+                </>
+            )}
+
+
             {isPending && (
-                <div
-                    className="absolute inset-0 flex items-center justify-center bg-background/60 backdrop-blur-sm transition-opacity duration-200 pointer-events-none"
-                    role="status"
-                    aria-live="polite"
-                >
+                <div className="absolute inset-0 flex items-center justify-center bg-background/60 backdrop-blur-sm transition-opacity duration-200 pointer-events-none" role="status" aria-live="polite">
                     <div className="flex items-center gap-3 px-4 py-3 rounded-md bg-card shadow">
                         <Loader2 className="h-5 w-5 animate-spin text-primary" aria-hidden="true" />
                         <span className="text-sm text-muted-foreground">Mengirim percakapan...</span>

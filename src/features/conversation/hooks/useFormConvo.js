@@ -16,10 +16,12 @@ export const useFormSession = () => {
         mutationFn: () => convoSession(),
     })
 }
-export const useKeyPoint = () => {
+export const useKeyPoint = (options = {}) => {
+    const { enabled = true } = options;
     return useQuery({
         queryKey: ["keyPoint"],
         queryFn: () => getKeyPoint(),
         placeholderData: keepPreviousData,
+        enabled,
     })
 }

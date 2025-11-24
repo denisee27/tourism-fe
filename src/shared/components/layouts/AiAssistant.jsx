@@ -2,6 +2,8 @@ import { Send, SendHorizontal, Sparkles } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useEachConversation, usePushMessage } from "../../hooks/useAiAssistant";
 import { useLocalStorageRefetch } from "../../hooks/useLocalStorageRefetch";
+import Markdown from "react-markdown";
+import { SyncLoader } from "react-spinners";
 
 export const AiAssistant = () => {
     const [sessionId, setSessionId] = useState(localStorage.getItem("sessionId"));
@@ -76,6 +78,7 @@ export const AiAssistant = () => {
     const handlePushMessage = (e) => {
         e.preventDefault();
         setMessages(state => [...state, { role: "user", text: inputMessage }]);
+        setMessages(state => [...state, { role: "loading" }]);
         pushMessage(inputMessage);
         setInputMessage("")
     }
@@ -93,7 +96,7 @@ export const AiAssistant = () => {
             console.log("pushMessage result has no text field", resultConvo);
             return;
         }
-
+        setMessages(state => state.slice(0, -1));
         setMessages((state) => [...state, { role: "model", text: nextText }]);
     }, [isPendingPush, resultConvo]);
 
@@ -137,7 +140,6 @@ export const AiAssistant = () => {
         return () => window.removeEventListener("resize", onResize);
     }, [autoScrollEnabled]);
 
-    // Auto-refetch ketika sessionId di localStorage berubah via custom hook
     useLocalStorageRefetch({
         key: "sessionId",
         queryKeys: [["eachConversation"]],
@@ -152,7 +154,6 @@ export const AiAssistant = () => {
                 <Sparkles className="size-6 text-primary" />
                 <h2 className="text-lg font-semibold text-foreground">AI Assistant</h2>
             </header>
-            {/* section conversation */}
             <div
                 id="eachData-container"
                 ref={eachContainerRef}
@@ -163,28 +164,35 @@ export const AiAssistant = () => {
                         ...((Array.isArray(eachData) ? eachData : (eachData?.messages || []))),
                         ...messages,
                     ]).map((message, index) => (
-                        <div
-                            key={index}
-                            className={`flex ${message.role === "user" ? "justify-end" : "justify-start"
-                                }`}
-                        >
-                            <div
-                                className={`max-w-[85%] rounded-lg px-4 py-3 text-sm leading-relaxed ${message.role === "user"
-                                    ? "bg-primary text-primary-foreground"
-                                    : "bg-muted text-foreground"
-                                    }`}
-                            >
-                                <span
-                                    className={`${(typeof (message.text || message.message) === 'string' && !(message.text || message.message)?.includes('\n') && (message.text || message.message)?.length > 500)
-                                        ? 'truncate'
-                                        : 'whitespace-pre-wrap'
-                                        } break-words leading-relaxed`}
-                                    title={(message.text || message.message) || ''}
-                                >
-                                    {message.text || message.message}
-                                </span>
-                            </div>
-                        </div>
+                        index !== 0 && message.text !== null ?
+                            <>
+                                <div className={`flex ${message.role === "user" ? "justify-end" : "justify-start"}`}>
+                                    <div
+                                        key={index}
+                                        className={`max-w-[85%] rounded-lg px-4 py-3 text-sm leading-relaxed ${message.role === "user"
+                                            ? "bg-primary text-primary-foreground"
+                                            : "bg-muted text-foreground"
+                                            }`}
+                                    >
+                                        <span
+                                            className={`${(typeof (message.text || message.message) === 'string' && !(message.text || message.message)?.includes('\n') && (message.text || message.message)?.length > 500)
+                                                ? 'truncate'
+                                                : 'whitespace-pre-wrap'
+                                                } break-words leading-relaxed`}
+                                            title={(message.text || message.message) || ''}
+                                        >
+                                            {message.role === "loading" ? (
+                                                <div className="h-2 justify-center items-center flex px-2 py-1">
+                                                    <SyncLoader size={6} color="#184e96" />
+                                                </div>
+                                            )
+                                                : (
+                                                    <Markdown>{message.text || message.message}</Markdown>
+                                                )}
+                                        </span>
+                                    </div>
+                                </div>
+                            </> : null
                     ))
                 )}
             </div>
