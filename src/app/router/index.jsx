@@ -6,7 +6,6 @@ import { createBrowserRouter, Outlet } from "react-router-dom";
 import SessionExpiredModal from "../../features/auth/components/SessionExpiredModal.jsx";
 import { PERMISSIONS } from "../../core/constants/permissions.js";
 import { MainLayout } from "../../shared/components/layouts/MainLayout.jsx";
-import RoleDashboard from "../../shared/components/layouts/RoleDashboard.jsx";
 import ProtectedRoute from "../../shared/components/guards/ProtectedRoute.jsx";
 import PublicRoute from "../../shared/components/guards/PublicRoute.jsx";
 import LoginPage from "../../features/auth/pages/LoginPage.jsx";
@@ -24,7 +23,6 @@ import NotFoundPage from "../../shared/components/pages/NotFoundPage.jsx";
 import MainPage from "../../features/landingPage/pages/mainPage.jsx";
 import VerifyEmailPage from "../../features/auth/pages/verifyEmailPage.jsx";
 import { FormConversation } from "../../features/conversation/pages/FormConversation.jsx";
-import { Conversation } from "../../features/conversation/pages/conversation.jsx";
 
 const UsersPage = () => (
   <div className="p-4 text-xl">User Management (Protected; requires users.view)</div>
@@ -68,7 +66,6 @@ export const router = createBrowserRouter([
             element: <MainLayout />,
             children: [
               { index: true, element: <FormConversation /> },
-              { index: 'conversation', element: <Conversation /> },
               { path: "ui-demo", element: <UIStoreDemo /> },
               { path: "rbac-demo", element: <RBACDemo /> },
               { path: "token-demo", element: <TokenRefreshDemo /> },

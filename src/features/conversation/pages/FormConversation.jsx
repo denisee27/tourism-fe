@@ -4,7 +4,7 @@ import { useConvo, useFormSession, useKeyPoint } from "../hooks/useFormConvo";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { conversationSchema } from "../utils/validation";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Markdown from 'react-markdown'
 
 export const FormConversation = () => {
@@ -13,7 +13,8 @@ export const FormConversation = () => {
     const { mutateAsync: startSession } = useFormSession();
     const { mutateAsync: submitConvo, isPending } = useConvo();
     const [hasSessionId, setHasSessionId] = useState(Boolean(localStorage.getItem("sessionId")));
-    const { data: keyPointList, isPending: isPendingKeyPoint } = useKeyPoint({ enabled: hasSessionId });
+    const [sessionId, setSessionId] = useState(localStorage.getItem("sessionId") || null);
+    const { data: keyPointList, isPending: isPendingKeyPoint, refetch: refetchKeyPoint } = useKeyPoint({ enabled: !!sessionId, sessionId });
     const [keyPoint, setKeyPoint] = useState(keyPointList || []);
     const [activeTabIndex, setActiveTabIndex] = useState(0);
     const handleTabClick = (idx) => setActiveTabIndex(idx);
@@ -42,18 +43,35 @@ export const FormConversation = () => {
         const session = await startSession();
         localStorage.setItem("sessionId", session?.sessionId);
         setHasSessionId(Boolean(session?.sessionId));
+        setSessionId(session?.sessionId || null);
         handlePushConvo(data);
     };
 
     const handlePushConvo = async (data) => {
         const sessionId = localStorage.getItem("sessionId");
-        const res = await submitConvo({ data, sessionId });
+        await submitConvo({ data, sessionId });
     }
+
+    useEffect(() => {
+        const onSessionIdChanged = (evt) => {
+            const sid = localStorage.getItem("sessionId");
+            setHasSessionId(Boolean(sid));
+            setSessionId(sid || null);
+        };
+        window.addEventListener("sessionId:changed", onSessionIdChanged);
+        return () => window.removeEventListener("sessionId:changed", onSessionIdChanged);
+    }, [refetchKeyPoint]);
+
+    useEffect(() => {
+        if (sessionId) {
+            refetchKeyPoint();
+        }
+    }, [sessionId, refetchKeyPoint]);
 
     return (
         <>
             {(!isPending && keyPoint?.length <= 0 && !conversationAi) && (
-                <div className="relative w-full mx-auto p-6 bg-card rounded-lg shadow" aria-busy={isPending}>
+                <div className="relative w-full mx-auto p-6 bg-card rounded-lg shadow h-screen" aria-busy={isPending}>
                     <div className="text-center">
                         <h2 className="text-2xl font-bold mb-2 text-primary">
                             <div className="flex items-center gap-2 justify-center">
@@ -181,7 +199,7 @@ export const FormConversation = () => {
                 </div>
             )}
 
-            {(!isPendingKeyPoint && hasSessionId && keyPointList?.length <= 0) && (
+            {(conversationAi && hasSessionId && keyPointList?.length <= 0) && (
                 <div className="flex flex-col items-center justify-center min-h-screen text-center mx-auto">
                     {/* Animasi Icon/Spinner */}
                     <div className="relative flex h-16 w-16 mb-4">
@@ -208,6 +226,14 @@ export const FormConversation = () => {
                 <div className="flex items-center gap-3 px-4 py-3 rounded-md bg-card shadow w-full mt-2" role="status" aria-live="polite">
                     <Loader2 className="h-5 w-5 animate-spin text-primary" aria-hidden="true" />
                     <span className="text-sm text-muted-foreground">Menyiapkan sesi AI...</span>
+                </div>
+            )}
+
+            {/* loading saat keyPoint sedang diambil setelah ada sessionId */}
+            {(conversationAi && hasSessionId && isPendingKeyPoint) && (
+                <div className="flex items-center gap-3 px-4 py-3 rounded-md bg-card shadow w-full mt-2" role="status" aria-live="polite">
+                    <Loader2 className="h-5 w-5 animate-spin text-primary" aria-hidden="true" />
+                    <span className="text-sm text-muted-foreground">Mengambil rekomendasi AI...</span>
                 </div>
             )}
 
@@ -244,16 +270,6 @@ export const FormConversation = () => {
                 </>
             )}
 
-
-            {isPending && (
-                <div className="absolute inset-0 flex items-center justify-center bg-background/60 backdrop-blur-sm transition-opacity duration-200 pointer-events-none" role="status" aria-live="polite">
-                    <div className="flex items-center gap-3 px-4 py-3 rounded-md bg-card shadow">
-                        <Loader2 className="h-5 w-5 animate-spin text-primary" aria-hidden="true" />
-                        <span className="text-sm text-muted-foreground">Mengirim percakapan...</span>
-                    </div>
-                </div>
-            )
-            }
         </>
     )
 }

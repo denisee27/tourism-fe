@@ -1,7 +1,7 @@
 import { create } from "zustand";
 
 export const useStoreConvo = create((set, get) => ({
-    conversations: true,
+    conversations: localStorage.getItem("sessionId") !== null,
     summary: false,
     setConversationAi: (value) => {
         set({ conversations: value });

@@ -12,8 +12,10 @@ import LogoutModal from "../pages/LogoutModalPage";
 import { useSidebar } from "../../hooks/useSidebar";
 import { useStoreConvo } from "../store/convoStore";
 import { getListConvo } from "../../api/index.js";
+import { useQueryClient } from "@tanstack/react-query";
 
 export const Sidebar = () => {
+  const queryClient = useQueryClient();
   const isCollapsed = useIsSidebarCollapsed();
   const toggleSidebar = useToggleSidebar();
   const [activeItem, setActiveItem] = useState(localStorage.getItem('sessionId') || null);
@@ -47,7 +49,6 @@ export const Sidebar = () => {
     isFetching,
     error,
   } = useSidebar(filters);
-  console.log(meta);
 
   useEffect(() => {
     mountedRef.current = true;
@@ -135,7 +136,9 @@ export const Sidebar = () => {
       if (sessionId) {
         setActiveItem(sessionId);
         setConversationAi(true);
-
+        // Invalidate dan paksa refetch untuk keyPoint
+        queryClient.invalidateQueries({ queryKey: ["keyPoint"] });
+        queryClient.refetchQueries({ queryKey: ["keyPoint"] });
         localStorage.setItem("sessionId", sessionId);
         window.dispatchEvent(new CustomEvent("sessionId:changed", { detail: { sessionId } }));
         return
@@ -281,7 +284,7 @@ export const Sidebar = () => {
               <button
                 type="button"
                 onClick={handleLogout}
-                className="flex items-start gap-3 py-2 text-black hover:text-white hover:cursor-pointer hover:bg-primary-light rounded-md transition-colors"
+                className="flex items-start gap-3 py-2 px-3 text-black hover:text-white hover:cursor-pointer hover:bg-primary-light rounded-md transition-colors"
               >
                 <LogOut />
                 <span className="font-medium">Logout</span>

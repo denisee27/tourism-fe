@@ -16,12 +16,14 @@ export const useFormSession = () => {
         mutationFn: () => convoSession(),
     })
 }
+
 export const useKeyPoint = (options = {}) => {
-    const { enabled = true } = options;
+    const { enabled = true, sessionId: sessionIdOpt } = options;
+    const sessionId = sessionIdOpt ?? (typeof window !== 'undefined' ? localStorage.getItem("sessionId") : undefined);
     return useQuery({
-        queryKey: ["keyPoint"],
+        queryKey: ["keyPoint", sessionId],
         queryFn: () => getKeyPoint(),
         placeholderData: keepPreviousData,
-        enabled,
+        enabled: enabled && !!sessionId,
     })
 }
