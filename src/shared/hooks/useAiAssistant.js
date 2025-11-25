@@ -2,9 +2,10 @@ import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { getEachConversation, pushMessage } from "../api";
 import { useCreateMutation } from "../../core/queries/mutationHelpers";
 
-export const useEachConversation = (sessionId, options = {}) => {
+export const useEachConversation = (options = {}) => {
+    const sessionId = localStorage.getItem("sessionId");
     return useQuery({
-        queryKey: ["eachConversation", sessionId || "none"],
+        queryKey: ["eachConversation", sessionId],
         queryFn: () => getEachConversation(),
         enabled: Boolean(sessionId),
         placeholderData: keepPreviousData,
@@ -15,10 +16,12 @@ export const useEachConversation = (sessionId, options = {}) => {
 };
 
 export const usePushMessage = (options = {}) => {
+    const sessionId = localStorage.getItem("sessionId");
     return useCreateMutation({
-        queryKey: ["eachConversation"],
+        queryKey: ["pushMessage", sessionId],
         mutationFn: pushMessage,
         showSuccessToast: false,
+        showErrorToast: false,
         ...options,
     });
 };

@@ -6,7 +6,8 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { conversationSchema } from "../utils/validation";
 import { useState, useEffect } from "react";
 import Markdown from 'react-markdown'
-
+import TripSummary from "../components/TripSummary";
+import { useQueryClient } from '@tanstack/react-query';
 export const FormConversation = () => {
     const setConversationAi = useStoreConvo((state) => state.setConversationAi);
     const conversationAi = useStoreConvo((state) => state.conversations);
@@ -18,6 +19,20 @@ export const FormConversation = () => {
     const [keyPoint, setKeyPoint] = useState(keyPointList || []);
     const [activeTabIndex, setActiveTabIndex] = useState(0);
     const handleTabClick = (idx) => setActiveTabIndex(idx);
+    const queryClient = useQueryClient();
+
+    useEffect(() => {
+        if (keyPointList) {
+            const summaryIndex = keyPointList.findIndex(item => item.title === "Summary");
+            if (summaryIndex > 0) {
+                const summaryItem = keyPointList[summaryIndex];
+                const newList = [summaryItem, ...keyPointList.slice(0, summaryIndex), ...keyPointList.slice(summaryIndex + 1)];
+                setKeyPoint(newList);
+            } else {
+                setKeyPoint(keyPointList);
+            }
+        }
+    }, [keyPointList]);
 
     const {
         register,
@@ -50,6 +65,9 @@ export const FormConversation = () => {
     const handlePushConvo = async (data) => {
         const sessionId = localStorage.getItem("sessionId");
         await submitConvo({ data, sessionId });
+        await queryClient.invalidateQueries({
+            queryKey: ['eachConversation', sessionId]
+        });
     }
 
     useEffect(() => {
@@ -70,7 +88,7 @@ export const FormConversation = () => {
 
     return (
         <>
-            {(!isPending && keyPoint?.length <= 0 && !conversationAi) && (
+            {(!isPending && !conversationAi) && (
                 <div className="relative w-full mx-auto p-6 bg-card rounded-lg shadow h-screen" aria-busy={isPending}>
                     <div className="text-center">
                         <h2 className="text-2xl font-bold mb-2 text-primary">
@@ -241,35 +259,47 @@ export const FormConversation = () => {
                 <>
                     <div className="mt-1 h-full min-h-0 flex flex-col overflow-x-auto w-full  min-w-0">
                         <div className="flex bg-sidebar-background flex-wrap gap-2 border-sidebar-border shrink-0 max-w-full border-b">
-                            {keyPointList?.map((tab, idx) => (
-                                <>
-                                    <button
-                                        key={tab.title}
-                                        type="button"
-                                        onClick={() => handleTabClick(idx)}
-                                        className={`flex items-center gap-2 px-4 py-2  transition-colors text-sm
+                            {keyPoint?.map((tab, idx) => (
+                                <button
+                                    key={tab.title}
+                                    type="button"
+                                    onClick={() => handleTabClick(idx)}
+                                    className={`flex items-center gap-2 px-4 py-2  transition-colors text-sm
                                         ${activeTabIndex === idx
-                                                ? "border-b-2 border-primary text-primary bg-white"
-                                                : "text-muted-foreground hover:text-foreground"}`}
-                                    >
-                                        {tab.title}
-                                    </button>
-
-                                </>
+                                            ? "border-b-2 border-primary text-primary bg-white"
+                                            : "text-muted-foreground hover:text-foreground"}`}
+                                >
+                                    {tab.title}
+                                </button>
                             ))}
                         </div>
 
                         <div className="mt-4 p-4 rounded-md bg-card overflow-y-auto min-h-0 flex-1 scroll-smooth">
-                            <p className="text-sm text-foreground whitespace-pre-line">
-                                <Markdown>
-                                    {keyPointList[activeTabIndex]?.detail}
-                                </Markdown>
-                            </p>
+                            {(() => {
+                                if (!keyPoint || !keyPoint[activeTabIndex]) return null;
+                                const tab = keyPoint[activeTabIndex];
+                                if (tab.title === 'Summary') {
+                                    try {
+                                        const summary = JSON.parse(tab.detail);
+                                        return <TripSummary summaryData={summary.details} />;
+                                    } catch (error) {
+                                        return <Markdown>{tab.detail}</Markdown>;
+                                    }
+                                } else {
+                                    return (
+                                        <>
+                                            <h2 className="text-2xl font-bold text-gray-800 mb-4">{tab.title}</h2>
+                                            <div className="text-sm text-foreground whitespace-pre-line">
+                                                <Markdown>{tab.detail}</Markdown>
+                                            </div>
+                                            s</>
+                                    );
+                                }
+                            })()}
                         </div>
                     </div>
                 </>
             )}
-
         </>
     )
 }

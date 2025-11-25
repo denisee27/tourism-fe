@@ -87,7 +87,7 @@ function MainPage() {
             {/* Footer */}
             <footer className="border-t border-border mt-20">
                 <div className="container mx-auto px-4 py-8 text-center text-muted-foreground">
-                    <p>© 2024 TravelMind. Powered by AI.</p>
+                <p>© 2025 TravelMind. Powered by AI.</p>
                 </div>
             </footer>
         </div>

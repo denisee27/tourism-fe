@@ -320,7 +320,6 @@ class APIClient {
       });
 
     const response = await executeWithRetry(requestFn, options);
-    console.log(`responseresponse ${url}`, response)
     return transform ? transformResponse(response) : response.data;
   }
 
@@ -338,8 +337,6 @@ class APIClient {
    */
   async getPaginated(url, options = {}) {
     const response = await this.get(url, { ...options, transform: false });
-    console.log('responsepaginated', response)
-
     return transformPaginatedResponse({ data: response });
   }
 

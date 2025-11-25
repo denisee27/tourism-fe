@@ -2,7 +2,6 @@ import api from "../../core/api";
 
 export const getListConvo = async ({ limit = 10, page = 1 }) => {
     const data = await api.getPaginated("/conversations?limit=" + limit + "&page=" + page);
-    console.log('data', data);
     return data;
 };
 

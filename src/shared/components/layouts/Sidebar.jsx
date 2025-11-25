@@ -31,6 +31,8 @@ export const Sidebar = () => {
   const mountedRef = useRef(true);
   const openLogoutModal = useUIStore((state) => state.openModal);
   const setConversationAi = useStoreConvo((state) => state.setConversationAi);
+  const setMessages = useStoreConvo((state) => state.setMessages);
+
 
   const handleLogout = () => {
     openLogoutModal("logoutModal", {});
@@ -136,7 +138,6 @@ export const Sidebar = () => {
       if (sessionId) {
         setActiveItem(sessionId);
         setConversationAi(true);
-        // Invalidate dan paksa refetch untuk keyPoint
         queryClient.invalidateQueries({ queryKey: ["keyPoint"] });
         queryClient.refetchQueries({ queryKey: ["keyPoint"] });
         localStorage.setItem("sessionId", sessionId);
@@ -145,6 +146,7 @@ export const Sidebar = () => {
       }
       setActiveItem(null);
       setConversationAi(false);
+      setMessages([]);
       localStorage.removeItem("sessionId");
     } catch (err) {
       console.warn("Gagal menyimpan sessionId", err);
@@ -222,7 +224,7 @@ export const Sidebar = () => {
                 </div>
               </button>
 
-              <button
+              {/* <button
                 type="button"
                 onClick={handleGetMe}
                 className="block px-3 py-2 border border-sidebar-border rounded transition-colors hover:bg-primary-light hover:text-white hover:cursor-pointer bg-white text-black w-full text-left"
@@ -231,7 +233,7 @@ export const Sidebar = () => {
                   <LayoutDashboard className="me-3" />
                   View Conversations
                 </div>
-              </button>
+              </button> */}
             </nav>
             <hr className="text-sidebar-border mt-5" />
           </>

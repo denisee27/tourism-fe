@@ -5,6 +5,7 @@ import { useCreateMutation } from "../../../core/queries/mutationHelpers"
 export const useConvo = () => {
     return useCreateMutation({
         queryKey: ["createConvo"],
+        showSuccessToast: false,
         mutationFn: ({ data, sessionId }) => createConvo(data, sessionId),
     })
 }
@@ -23,6 +24,7 @@ export const useKeyPoint = (options = {}) => {
     return useQuery({
         queryKey: ["keyPoint", sessionId],
         queryFn: () => getKeyPoint(),
+        showSuccessToast: false,
         placeholderData: keepPreviousData,
         enabled: enabled && !!sessionId,
     })

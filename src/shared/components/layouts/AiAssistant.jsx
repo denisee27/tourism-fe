@@ -1,91 +1,102 @@
 import { Send, SendHorizontal, Sparkles } from "lucide-react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import { useEachConversation, usePushMessage } from "../../hooks/useAiAssistant";
 import { useLocalStorageRefetch } from "../../hooks/useLocalStorageRefetch";
 import Markdown from "react-markdown";
 import { SyncLoader } from "react-spinners";
+import { useStoreConvo } from "../store/convoStore";
 
 export const AiAssistant = () => {
     const [sessionId, setSessionId] = useState(localStorage.getItem("sessionId"));
-    const [messages, setMessages] = useState([]);
+    const { data: eachData, isPending: isPendingFetch, isRefetching, isError } = useEachConversation(sessionId);
+    const { messages, addMessage, setMessages } = useStoreConvo();
     const [inputMessage, setInputMessage] = useState("");
-    const { data: eachData = null, refetch, isRefetching, isPending, isError } = useEachConversation(sessionId);
-    const { mutate: pushMessage, data: resultConvo = [], isPending: isPendingPush, isError: isErrorPush } = usePushMessage();
-    const eachMessages = useMemo(() => (
-        Array.isArray(eachData) ? eachData : (eachData?.messages || [])
-    ), [eachData]);
-
-    // Ref ke kontainer & kontrol auto-scroll agar tidak mengganggu scroll manual
-    const eachContainerRef = useRef(null);
+    const { mutate: pushMessage, data: resultConvo = [], isPending: isPendingPush } = usePushMessage();
+    const textareaRef = useRef(null);
+    const messagesEndRef = useRef(null);
+    const messagesContainerRef = useRef(null);
     const [autoScrollEnabled, setAutoScrollEnabled] = useState(true);
-    const prevEachLenRef = useRef(0);
 
-    // Util throttle & debounce ringan
-    const throttle = (fn, wait = 100) => {
-        let last = 0;
-        return (...args) => {
-            const now = Date.now();
-            if (now - last >= wait) {
-                last = now;
-                fn(...args);
+
+    useEffect(() => {
+        const handleSessionChange = () => {
+            if (eachData && !isRefetching && messages.length === 0) {
+                const historyMessages = Array.isArray(eachData) ? eachData : (eachData?.messages || []);
+                setMessages(historyMessages);
             }
         };
-    };
-    const debounce = (fn, delay = 120) => {
-        let t;
-        return (...args) => {
-            clearTimeout(t);
-            t = setTimeout(() => fn(...args), delay);
-        };
-    };
+        handleSessionChange();
+    }, [eachData, isRefetching, setMessages, messages.length]);
 
-    // Animasi scroll yang smooth
-    const animateScroll = (container, targetTop, durationMs = 300) => {
-        try {
-            const startTop = container.scrollTop;
-            const distance = targetTop - startTop;
-            const startTime = performance.now();
-            const easeInOutQuad = (t) => (t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t);
-            const step = (now) => {
-                const elapsed = now - startTime;
-                const progress = Math.min(elapsed / durationMs, 1);
-                const eased = easeInOutQuad(progress);
-                container.scrollTop = startTop + distance * eased;
-                if (progress < 1) requestAnimationFrame(step);
-            };
-            requestAnimationFrame(step);
-        } catch (err) {
-            // Fallback tanpa animasi
-            if (container) container.scrollTop = targetTop;
+    const throttle = (func, limit) => {
+        let inThrottle;
+        return function () {
+            const args = arguments;
+            const context = this;
+            if (!inThrottle) {
+                func.apply(context, args);
+                inThrottle = true;
+                setTimeout(() => inThrottle = false, limit);
+            }
         }
-    };
-    useEffect(() => {
-        if (!sessionId) return;
-        refetch();
-    }, [sessionId, refetch]);
-
-    const safeScrollToBottom = () => {
-        const container = eachContainerRef.current;
-        if (!container) return;
-        const hasOverflow = container.scrollHeight > container.clientHeight;
-        if (!hasOverflow) return;
-        const target = Math.max(container.scrollHeight - container.clientHeight, 0);
-        animateScroll(container, target, 300);
-    };
-
-    const debouncedScrollToBottom = useMemo(() => debounce(safeScrollToBottom, 150), [eachMessages.length]);
-
-    const handlePushMessage = (e) => {
-        e.preventDefault();
-        setMessages(state => [...state, { role: "user", text: inputMessage }]);
-        setMessages(state => [...state, { role: "loading" }]);
-        pushMessage(inputMessage);
-        setInputMessage("")
     }
 
     useEffect(() => {
-        if (isPendingPush) return;
-        if (!resultConvo) return;
+        const container = messagesContainerRef.current;
+        if (!container) return;
+
+        const handleScroll = () => {
+            const { scrollTop, scrollHeight, clientHeight } = container;
+            const atBottom = scrollHeight - scrollTop - clientHeight < 50;
+            setAutoScrollEnabled(atBottom);
+        };
+
+        const throttledHandleScroll = throttle(handleScroll, 100);
+        container.addEventListener("scroll", throttledHandleScroll);
+
+        return () => {
+            container.removeEventListener("scroll", throttledHandleScroll);
+        };
+    }, []);
+
+    useEffect(() => {
+        if (autoScrollEnabled) {
+            setTimeout(() => {
+                messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+            }, 100);
+        }
+    }, [messages, autoScrollEnabled]);
+
+    const debounce = (fn, delay) => {
+        let timeoutId;
+        return function (...args) {
+            clearTimeout(timeoutId);
+            timeoutId = setTimeout(() => fn.apply(this, args), delay);
+        };
+    };
+
+    const handlePushLogic = useCallback((message) => {
+        addMessage({ role: "user", text: message, id: Date.now().toString(), author: "user" });
+        addMessage({ role: "loading", text: "...", id: "loading", author: "model" });
+        pushMessage(message);
+        setInputMessage("");
+        textareaRef.current?.focus();
+    }, [addMessage, pushMessage]);
+
+    const debouncedPush = useMemo(() => debounce(handlePushLogic, 200), [handlePushLogic]);
+
+    const handlePushMessage = (e) => {
+        e.preventDefault();
+        const trimmedMessage = inputMessage.trim();
+        if (!trimmedMessage || isPendingPush) {
+            return;
+        }
+        setAutoScrollEnabled(true);
+        debouncedPush(trimmedMessage);
+    };
+
+    useEffect(() => {
+        if (isPendingPush || !resultConvo) return;
 
         const getText = (item) => item?.text || item?.message || item?.plainText || "";
         const nextText = Array.isArray(resultConvo)
@@ -93,60 +104,30 @@ export const AiAssistant = () => {
             : getText(resultConvo);
 
         if (!nextText) {
-            console.log("pushMessage result has no text field", resultConvo);
             return;
         }
-        setMessages(state => state.slice(0, -1));
-        setMessages((state) => [...state, { role: "model", text: nextText }]);
-    }, [isPendingPush, resultConvo]);
 
-    useEffect(() => {
-        if (isPending) return;
-        const container = eachContainerRef.current;
-        if (!container) return;
-        const hasOverflow = container.scrollHeight > container.clientHeight;
+        addMessage({ role: "model", text: nextText, id: Date.now().toString(), author: "model" });
+    }, [isPendingPush, resultConvo, addMessage]);
 
-        const prevLen = prevEachLenRef.current;
-        const currLen = eachMessages.length;
-        const added = currLen > prevLen;
-        prevEachLenRef.current = currLen;
-
-        if ((prevLen === 0 && currLen > 0) || added) {
-            if (autoScrollEnabled && hasOverflow) {
-                debouncedScrollToBottom();
-            }
-        }
-    }, [eachMessages.length, isPending, autoScrollEnabled, debouncedScrollToBottom]);
-
-    // Deteksi interaksi user: disable auto-scroll jika user scroll ke atas
-    useEffect(() => {
-        const container = eachContainerRef.current;
-        if (!container) return;
-        const onScroll = throttle(() => {
-            const { scrollTop, clientHeight, scrollHeight } = container;
-            const atBottom = scrollTop + clientHeight >= scrollHeight - 8;
-            setAutoScrollEnabled(atBottom);
-        }, 100);
-        container.addEventListener("scroll", onScroll);
-        return () => container.removeEventListener("scroll", onScroll);
-    }, []);
-
-    // Scroll saat resize (edge case)
-    useEffect(() => {
-        const onResize = throttle(() => {
-            if (autoScrollEnabled) safeScrollToBottom();
-        }, 200);
-        window.addEventListener("resize", onResize);
-        return () => window.removeEventListener("resize", onResize);
-    }, [autoScrollEnabled]);
 
     useLocalStorageRefetch({
         key: "sessionId",
         queryKeys: [["eachConversation"]],
         onChange: (next) => {
-            if (next && next !== sessionId) setSessionId(next);
+            if (next && next !== sessionId) {
+                setMessages([]);
+                setSessionId(next);
+            }
         },
     });
+
+    const handleKeyDown = (e) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            handlePushMessage(e);
+        }
+    };
 
     return (
         <main className="w-full flex h-screen flex-1 flex-col bg-background border-s border-sidebar-border">
@@ -155,63 +136,69 @@ export const AiAssistant = () => {
                 <h2 className="text-lg font-semibold text-foreground">AI Assistant</h2>
             </header>
             <div
-                id="eachData-container"
-                ref={eachContainerRef}
+                id="messages-container"
+                ref={messagesContainerRef}
                 className="flex-1 space-y-6 overflow-x-auto overflow-y-auto p-6 scroll-smooth overscroll-contain"
             >
-                {isPending || isRefetching ? <div>Loading...</div> : (
-                    ([
-                        ...((Array.isArray(eachData) ? eachData : (eachData?.messages || []))),
-                        ...messages,
-                    ]).map((message, index) => (
+                {isPendingFetch || isRefetching ? (
+                    <div className="flex justify-center items-center h-full">
+                        <SyncLoader size={10} color="#184e96" />
+                    </div>
+                ) : isError ? (
+                    <div className="flex justify-center items-center h-full">
+                        <p className="text-red-500">Error loading conversation. Please try refreshing the page.</p>
+                    </div>
+                ) : (
+                    messages.map((message, index) => (
                         index !== 0 && message.text !== null ?
-                            <>
-                                <div className={`flex ${message.role === "user" ? "justify-end" : "justify-start"}`}>
-                                    <div
-                                        key={index}
-                                        className={`max-w-[85%] rounded-lg px-4 py-3 text-sm leading-relaxed ${message.role === "user"
-                                            ? "bg-primary text-primary-foreground"
-                                            : "bg-muted text-foreground"
-                                            }`}
+                            <div key={message.id || index} className={`flex ${message.role === "user" ? "justify-end" : "justify-start"}`}>
+                                <div
+                                    className={`max-w-[85%] rounded-lg px-4 py-3 text-sm leading-relaxed ${message.role === "user"
+                                        ? "bg-primary text-primary-foreground"
+                                        : "bg-muted text-foreground"
+                                        }`}
+                                >
+                                    <span
+                                        className={`${(typeof (message.text) === 'string' && !message.text?.includes('\n') && message.text?.length > 500)
+                                            ? 'truncate'
+                                            : 'whitespace-pre-wrap'
+                                            } break-words leading-relaxed`}
+                                        title={message.text || ''}
                                     >
-                                        <span
-                                            className={`${(typeof (message.text || message.message) === 'string' && !(message.text || message.message)?.includes('\n') && (message.text || message.message)?.length > 500)
-                                                ? 'truncate'
-                                                : 'whitespace-pre-wrap'
-                                                } break-words leading-relaxed`}
-                                            title={(message.text || message.message) || ''}
-                                        >
-                                            {message.role === "loading" ? (
-                                                <div className="h-2 justify-center items-center flex px-2 py-1">
-                                                    <SyncLoader size={6} color="#184e96" />
-                                                </div>
-                                            )
-                                                : (
-                                                    <Markdown>{message.text || message.message}</Markdown>
-                                                )}
-                                        </span>
-                                    </div>
+                                        {message.role === "loading" ? (
+                                            <div className="h-2 justify-center items-center flex px-2 py-1">
+                                                <SyncLoader size={6} color="#184e96" />
+                                            </div>
+                                        )
+                                            : (
+                                                <Markdown>{message.text}</Markdown>
+                                            )}
+                                    </span>
                                 </div>
-                            </> : null
+                            </div> : null
                     ))
                 )}
+                <div ref={messagesEndRef} />
             </div>
 
             <footer className="border-t border-sidebar-border p-4">
-                <form>
+                <form onSubmit={handlePushMessage}>
                     <div className="flex items-center gap-2">
                         <textarea
+                            ref={textareaRef}
                             name="message"
                             value={inputMessage}
                             onChange={(e) => setInputMessage(e.target.value)}
                             placeholder="Ask me about your trip"
                             className="flex-1 resize-none rounded-lg border border-input bg-transparent p-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
                             rows={1}
+                            onKeyDown={handleKeyDown}
+                            disabled={isPendingPush}
                         />
                         <button
-                            onClick={handlePushMessage}
                             type="submit"
-                            className="flex size-10 items-center justify-center rounded-md bg-primary text-primary-foreground transition-colors hover:bg-primary/90"
+                            disabled={isPendingPush || !inputMessage.trim()}
+                            className="flex size-10 items-center justify-center rounded-md bg-primary text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-50"
                         >
                             <Send className="size-5" />
                             <span className="sr-only">Send</span>
