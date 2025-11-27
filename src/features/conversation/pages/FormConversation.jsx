@@ -51,6 +51,7 @@ export const FormConversation = () => {
     register,
     handleSubmit,
     formState: { errors, isSubmitting },
+    reset,
   } = useForm({
     resolver: zodResolver(conversationSchema),
     mode: "onChange",
@@ -76,7 +77,8 @@ export const FormConversation = () => {
     addMessage({ role: "user", text: `hai`, id: Date.now().toString(), author: "user" });
     addMessage({ role: "loading", text: "...", id: "loading", author: "model" });
 
-    handlePushConvo(data);
+    await handlePushConvo(data);
+    reset();
   };
 
   const handlePushConvo = async (data) => {

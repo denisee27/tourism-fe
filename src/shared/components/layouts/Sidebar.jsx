@@ -1,12 +1,6 @@
 import useUIStore, { useIsSidebarCollapsed, useToggleSidebar } from "../../../core/stores/uiStore";
 import { useAuthStore } from "../../../features/auth/stores/authStore";
-import {
-  LayoutDashboard,
-  LogOut,
-  MessageSquare,
-  Plus,
-  User,
-} from "lucide-react";
+import { LayoutDashboard, LogOut, MessageSquare, Plus, User } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import LogoutModal from "../pages/LogoutModalPage";
 import { useSidebar } from "../../hooks/useSidebar";
@@ -18,7 +12,7 @@ export const Sidebar = () => {
   const queryClient = useQueryClient();
   const isCollapsed = useIsSidebarCollapsed();
   const toggleSidebar = useToggleSidebar();
-  const [activeItem, setActiveItem] = useState(localStorage.getItem('sessionId') || null);
+  const [activeItem, setActiveItem] = useState(localStorage.getItem("sessionId") || null);
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
   const [items, setItems] = useState([]);
@@ -32,7 +26,6 @@ export const Sidebar = () => {
   const openLogoutModal = useUIStore((state) => state.openModal);
   const setConversationAi = useStoreConvo((state) => state.setConversationAi);
   const setMessages = useStoreConvo((state) => state.setMessages);
-
 
   const handleLogout = () => {
     openLogoutModal("logoutModal", {});
@@ -75,7 +68,9 @@ export const Sidebar = () => {
       if (page === 1) {
         setItems(uniqueById(conversations));
         // set hasMore from meta
-        const totalPages = meta?.totalPages ?? (meta?.total && meta?.limit ? Math.ceil(meta.total / meta.limit) : undefined);
+        const totalPages =
+          meta?.totalPages ??
+          (meta?.total && meta?.limit ? Math.ceil(meta.total / meta.limit) : undefined);
         if (typeof totalPages === "number") setHasMore(page < totalPages);
         // keep scroll at top on initial open
         if (listRef.current) {
@@ -100,9 +95,15 @@ export const Sidebar = () => {
       await new Promise((res) => setTimeout(res, FETCH_DELAY_MS));
       const { data: nextData = [], meta: nextMeta } = await getListConvo({ page: nextPage, limit });
       if (!mountedRef.current) return;
-      setItems((prev) => uniqueById([...(prev || []), ...(Array.isArray(nextData) ? nextData : [])]));
+      setItems((prev) =>
+        uniqueById([...(prev || []), ...(Array.isArray(nextData) ? nextData : [])])
+      );
       setPage(nextPage);
-      const totalPages = nextMeta?.totalPages ?? (nextMeta?.total && nextMeta?.limit ? Math.ceil(nextMeta.total / nextMeta.limit) : undefined);
+      const totalPages =
+        nextMeta?.totalPages ??
+        (nextMeta?.total && nextMeta?.limit
+          ? Math.ceil(nextMeta.total / nextMeta.limit)
+          : undefined);
       if (typeof totalPages === "number") setHasMore(nextPage < totalPages);
       // Jangan paksa scroll ke bawah; biarkan posisi pengguna tetap
     } catch (err) {
@@ -142,7 +143,7 @@ export const Sidebar = () => {
         queryClient.refetchQueries({ queryKey: ["keyPoint"] });
         localStorage.setItem("sessionId", sessionId);
         window.dispatchEvent(new CustomEvent("sessionId:changed", { detail: { sessionId } }));
-        return
+        return;
       }
       setActiveItem(null);
       setConversationAi(false);
@@ -198,7 +199,12 @@ export const Sidebar = () => {
           >
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               {isCollapsed ? (
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M9 5l7 7-7 7"
+                />
               ) : (
                 <path
                   strokeLinecap="round"
@@ -243,36 +249,57 @@ export const Sidebar = () => {
       {/* Section Navigation Item (scroll only this section) */}
       {!isCollapsed && (
         <div className="flex flex-1 flex-col min-h-0">
-          <div ref={listRef} onScroll={debouncedScroll} className="flex-1 overflow-y-auto p-2 flex flex-col gap-1">
+          <div
+            ref={listRef}
+            onScroll={debouncedScroll}
+            className="flex-1 overflow-y-auto p-2 flex flex-col gap-1"
+          >
             {items.map((item) => (
               <div
                 key={item.id}
                 onClick={() => handlePickConversation(item.sessionId)}
-                className={`flex items-center gap-2 hover:bg-muted-foreground/8 hover:cursor-pointer rounded-md p-2 ${activeItem === item.sessionId ? "bg-muted-foreground/8" : ""}`}
+                className={`flex items-center gap-2 hover:bg-muted-foreground/8 hover:cursor-pointer rounded-md p-2 ${
+                  activeItem === item.sessionId ? "bg-muted-foreground/8" : ""
+                }`}
               >
                 <MessageSquare
                   className={activeItem === item.sessionId ? "text-primary" : "text-black"}
                 />
-                <div className={`font-medium flex-col ${activeItem === item.sessionId ? "text-primary" : "text-black"}`}>
-                  <div className="w-45 text-ellipsis text-md overflow-hidden whitespace-nowrap">
-                    {item.sessionId}
+                <div
+                  className={`font-medium flex-col ${
+                    activeItem === item.sessionId ? "text-primary" : "text-black"
+                  }`}
+                >
+                  <div className="w-45 text-ellipsis text-[10px] overflow-hidden whitespace-nowrap">
+                    {item.name == "Conversation Session" ? item.sessionId : item.name}
                   </div>
-                  <div className="text-sm text-gray-500">{new Date(item.createdAt).toLocaleDateString()}</div>
+                  <div className="text-sm text-gray-500">
+                    {new Date(item.createdAt).toLocaleDateString()}
+                  </div>
                 </div>
               </div>
             ))}
             {(isLoading || isFetching || isFetchingMore) && (
               <div className="flex items-center justify-center py-2">
                 <svg className="animate-spin h-5 w-5 text-primary" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+                  <circle
+                    className="opacity-25"
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    strokeWidth="4"
+                  ></circle>
+                  <path
+                    className="opacity-75"
+                    fill="currentColor"
+                    d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
+                  ></path>
                 </svg>
                 <span className="ml-2 text-sm text-muted-foreground">Loading...</span>
               </div>
             )}
-            {fetchError && (
-              <div className="text-red-600 text-sm px-2 py-1">{fetchError}</div>
-            )}
+            {fetchError && <div className="text-red-600 text-sm px-2 py-1">{fetchError}</div>}
           </div>
 
           {/* section profile (fixed at bottom) */}
