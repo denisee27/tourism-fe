@@ -8,6 +8,7 @@ import { useState, useEffect } from "react";
 import Markdown from "react-markdown";
 import TripSummary from "../components/TripSummary";
 import { useQueryClient } from "@tanstack/react-query";
+import { usePushMessage } from "../../../shared/hooks/useAiAssistant";
 export const FormConversation = () => {
   const {
     messages,
@@ -29,6 +30,12 @@ export const FormConversation = () => {
   const [activeTabIndex, setActiveTabIndex] = useState(0);
   const handleTabClick = (idx) => setActiveTabIndex(idx);
   const queryClient = useQueryClient();
+  const currentTab = keyPoint?.[activeTabIndex];
+  const {
+    mutate: pushMessage,
+    data: summaryResult = [],
+    isPending: isPendingSummary,
+  } = usePushMessage();
 
   useEffect(() => {
     if (keyPointList) {
@@ -110,6 +117,32 @@ export const FormConversation = () => {
       refetchKeyPoint();
     }
   }, [sessionId, refetchKeyPoint]);
+
+  useEffect(() => {
+    if (isPendingSummary || !summaryResult) return;
+
+    const getText = (item) => item?.text || item?.message || item?.plainText || "";
+    const nextText = Array.isArray(summaryResult)
+      ? getText(summaryResult[summaryResult.length - 1])
+      : getText(summaryResult);
+
+    if (!nextText) return;
+
+    addMessage({ role: "model", text: nextText, id: Date.now().toString(), author: "model" });
+  }, [isPendingSummary, summaryResult, addMessage]);
+
+  const handleClickSummary = () => {
+    if (!hasSessionId || !sessionId || isPendingSummary) return;
+    const summaryPrompt = "please summarize the whole conversation";
+    addMessage({
+      role: "user",
+      text: summaryPrompt,
+      id: Date.now().toString(),
+      author: "user",
+    });
+    addMessage({ role: "loading", text: "...", id: "loading", author: "model" });
+    pushMessage(summaryPrompt);
+  };
 
   return (
     <>
@@ -325,8 +358,8 @@ export const FormConversation = () => {
                 </button>
               ))}
             </div>
-
-            <div className="mt-4 p-4 rounded-md bg-card overflow-y-auto min-h-0 flex-1 scroll-smooth">
+            {/* 
+            <div className="relative mt-4 p-4 rounded-md bg-card overflow-y-auto min-h-0 flex-1 scroll-smooth">
               {(() => {
                 if (!keyPoint || !keyPoint[activeTabIndex]) return null;
                 const tab = keyPoint[activeTabIndex];
@@ -344,10 +377,57 @@ export const FormConversation = () => {
                       <div className="text-sm text-foreground whitespace-pre-line">
                         <Markdown>{tab.detail}</Markdown>
                       </div>
+                      <div className="absolute right-4 bottom-4">
+                        <button
+                          type="button"
+                          className="inline-flex items-center px-4 py-2 rounded-md bg-primary text-primary-foreground shadow-md hover:bg-primary/90 transition"
+                        >
+                          Summary
+                        </button>
+                      </div>
                     </>
                   );
                 }
               })()}
+            </div> */}
+            <div className="relative mt-4 min-h-0 flex-1">
+              {/* scrollable content */}
+              <div className="p-4 rounded-md bg-card overflow-y-auto min-h-0 h-full scroll-smooth">
+                {(() => {
+                  if (!keyPoint || !keyPoint[activeTabIndex]) return null;
+                  const tab = keyPoint[activeTabIndex];
+
+                  if (tab.title === "Summary") {
+                    try {
+                      const summary = JSON.parse(tab.detail);
+                      return <TripSummary summaryData={summary.details} />;
+                    } catch {
+                      return <Markdown>{tab.detail}</Markdown>;
+                    }
+                  }
+
+                  return (
+                    <>
+                      <h2 className="text-2xl font-bold text-gray-800 mb-4">{tab.title}</h2>
+                      <div className="text-sm text-foreground whitespace-pre-line">
+                        <Markdown>{tab.detail}</Markdown>
+                      </div>
+                    </>
+                  );
+                })()}
+              </div>
+
+              {/* floating overlay button */}
+              {currentTab && currentTab.title !== "Summary" && (
+                <button
+                  type="button"
+                  onClick={handleClickSummary}
+                  disabled={isPendingSummary}
+                  className="absolute right-4 bottom-4 z-20 inline-flex items-center px-4 py-2 rounded-md bg-primary text-primary-foreground shadow-md hover:bg-primary/90 transition disabled:opacity-60"
+                >
+                  Summary
+                </button>
+              )}
             </div>
           </div>
         </>
